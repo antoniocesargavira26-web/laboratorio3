@@ -16,8 +16,8 @@ services:
         fi
         /opt/hadoop/bin/hdfs namenode
     ports:
-      - "9871:9870"   # Mapeado a 9871 en host para acceder a la Web UI
-      - "9000:9000"
+      - "19870:9870"   # Antes 9871:9870 (Web UI HDFS)
+      - "19000:9000"   # Antes 9000:9000 (IPC HDFS)
     volumes:
       - namenode_data:/tmp/hadoop-root/dfs/name
     networks:
@@ -58,7 +58,7 @@ services:
         echo '<configuration><property><name>yarn.resourcemanager.hostname</name><value>resourcemanager</value></property></configuration>' > /opt/hadoop/etc/hadoop/yarn-site.xml
         /opt/hadoop/bin/yarn resourcemanager
     ports:
-      - "8088:8088"
+      - "18088:8088"   # Antes 8088:8088 (Web UI YARN)
     networks:
       - bigdata-net
 
@@ -75,7 +75,7 @@ services:
     depends_on:
       - resourcemanager
     ports:
-      - "8042:8042"
+      - "18042:8042"   # Antes 8042:8042 (Web UI NodeManager)
     networks:
       - bigdata-net
 
@@ -89,8 +89,8 @@ services:
     user: root
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
     ports:
-      - "8080:8080"
-      - "7077:7077"
+      - "18080:8080"   # Antes 8080:8080 (Web UI Spark Master)
+      - "17077:7077"   # Antes 7077:7077 (Spark Master RPC)
     networks:
       - bigdata-net
 
@@ -102,7 +102,7 @@ services:
       - spark-master
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
     ports:
-      - "8081:8081"
+      - "18081:8081"   # Antes 8081:8081 (Web UI Spark Worker)
     networks:
       - bigdata-net
 
@@ -115,13 +115,13 @@ services:
     hostname: kafka
     user: root
     ports:
-      - "9092:9092"
+      - "19092:9092"   # Antes 9092:9092 (Broker externo)
     environment:
       KAFKA_NODE_ID: 1
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
       KAFKA_PROCESS_ROLES: 'broker,controller'
       KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:19092'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
@@ -143,7 +143,7 @@ services:
     image: mongo:7.0
     container_name: mongodb
     ports:
-      - "27017:27017"
+      - "37017:27017"  # Antes 27017:27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: adminpassword
@@ -156,7 +156,7 @@ services:
     image: postgres:16-alpine
     container_name: postgres
     ports:
-      - "5432:5432"
+      - "15432:5432"   # Antes 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
@@ -171,7 +171,7 @@ services:
     container_name: mysql
     hostname: mysql
     ports:
-      - "3306:3306"
+      - "13306:3306"   # Antes 3306:3306
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: bigdata_db
@@ -186,7 +186,7 @@ services:
     image: jupyter/pyspark-notebook:latest
     container_name: jupyter_notebook
     ports:
-      - "8888:8888"
+      - "18888:8888"   # Antes 8888:8888
     environment:
       - JUPYTER_ENABLE_LAB=yes
     volumes:
@@ -200,9 +200,8 @@ services:
     hostname: hadoop-lab
     user: root
     ports:
-      - "9872:9870"   # Cambiado de 9870 a 9872 (evita puerto ocupado en el host)
-      - "8089:8088"   # Cambiado de 8088 a 8089 (evita conflicto con resourcemanager)
-    #command: ["standalone"]
+      - "19872:9870"   # Antes 9872:9870
+      - "18089:8088"   # Antes 8089:8088
     command: ["tail", "-f", "/dev/null"]
     volumes:
       - ./datos:/workspace
