@@ -1,0 +1,23 @@
+# MANIFIESTO DE CUARENTENA - PASARELA DE INTEGRIDAD Y CALIDAD KDD
+# Fecha de ejecucion: 2026-11-12 20:03:14
+# Ficheros evaluados: 3 | Validados: 2 | En cuarentena: 1
+#==============================================================================
+
+[FASE 1 - FICHEROS RECHAZADOS POR FIRMA SHA-256 DISCREPANTE]
+SIN_HASH  transacciones_tienda_sur.csv  # ESTADO=AUSENTE | ESPERADO=0773c2cde0d45d3bfea53ebe6a0ad9f8fd7f04dabd23f55e737f64918128b83c
+
+[FASE 2 - REGISTROS SEGREGADOS A quarantine/bad_records.csv]
+# Registros analizados en staging: 100 | Segregados: 13 | Conformes: 87
+transacciones_tienda_este.csv | ID=<NA> | NULO_CLAVE_PRIMARIA: id_transaccion ausente
+transacciones_tienda_este.csv | ID=TXE-20261110-0010 | TIMESTAMP_FUERA_ANIO_2026: '2027-08-21 14:22:10'
+transacciones_tienda_este.csv | ID=TXE-20261110-0012 | DOMINIO_IMPORTE_NO_POSITIVO: -34.5 EUR
+transacciones_tienda_este.csv | ID=TXE-20261110-0016 | OUTLIER_ESTADISTICO_IQR: 1480.0 EUR > 139.62 EUR
+transacciones_tienda_este.csv | ID=TXE-20261110-0018 | DOMINIO_IMPORTE_NO_POSITIVO: 0.0 EUR
+transacciones_tienda_este.csv | ID=TXE-20261110-0022 | TIMESTAMP_FUERA_ANIO_2026: '2024-02-11 09:10:05'
+transacciones_tienda_este.csv | ID=TXE-20261110-0025 | DOMINIO_UNIDADES_INVALIDAS: 0
+transacciones_tienda_este.csv | ID=<NA> | NULO_CLAVE_PRIMARIA: id_transaccion ausente
+transacciones_tienda_este.csv | ID=TXE-20261110-0032 | OUTLIER_ESTADISTICO_IQR: 2750.9 EUR > 139.62 EUR
+transacciones_tienda_este.csv | ID=TXE-20261110-0034 | NULO_OBLIGATORIO: importe_eur ausente o no numérico
+transacciones_tienda_este.csv | ID=TXE-20261110-0039 | TIMESTAMP_CORRUPTO: '2026-99-99 INVALID_TS' no cumple ISO 8601
+transacciones_tienda_este.csv | ID=TXE-20261110-0042 | DOMINIO_UNIDADES_INVALIDAS: -3
+transacciones_tienda_este.csv | ID=TXE-20261110-0047 | OUTLIER_ESTADISTICO_IQR: 4120.0 EUR > 139.62 EUR

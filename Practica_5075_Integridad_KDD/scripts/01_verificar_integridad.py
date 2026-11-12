@@ -19,7 +19,8 @@ from typing import Any
 # desde el directorio principal como desde una subcarpeta `scripts/`.
 SCRIPT_DIR: Path = Path(__file__).resolve().parent
 BASE_DIR: Path = SCRIPT_DIR.parent if SCRIPT_DIR.name.lower() == "scripts" else SCRIPT_DIR
-
+OUTPUT_SAMPLES_DIR: Path = BASE_DIR / "output_samples"
+QUARANTINE_MANIFEST_PATH: Path = OUTPUT_SAMPLES_DIR / "quarantine_manifest.txt"
 RAW_DIR: Path = BASE_DIR / "raw_batch_202611"
 MANIFEST_PATH: Path = RAW_DIR / "manifest_checksums.sha256"
 STAGING_VERIFIED_DIR: Path = BASE_DIR / "staging" / "verified"
@@ -201,6 +202,25 @@ def ejecutar_pasarela_integridad() -> dict[str, Any]:
         f"=== FIN FASE 1 | Validados: {aprobados}/{total_ficheros} ({tasa_integridad}%) | "
         f"En cuarentena: {rechazados} ==="
     )
+
+    # Generación del manifiesto de cuarentena en output_samples/quarantine_manifest.txt
+    OUTPUT_SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+    lineas_manifiesto = [
+        "# MANIFIESTO DE CUARENTENA - PASARELA DE INTEGRIDAD Y CALIDAD KDD",
+        f"# Fecha de ejecucion: {resumen['timestamp_ejecucion']}",
+        f"# Ficheros evaluados: {total_ficheros} | Validados: {aprobados} | En cuarentena: {rechazados}",
+        "#" + "=" * 78,
+        "",
+        "[FASE 1 - FICHEROS RECHAZADOS POR FIRMA SHA-256 DISCREPANTE]",
+    ]
+    for item in detalle_ficheros:
+        if item["estado"] != "VERIFICADO":
+            lineas_manifiesto.append(
+                f"{item['hash_calculado'] or 'SIN_HASH'}  {item['archivo']}  "
+                f"# ESTADO={item['estado']} | ESPERADO={item['hash_esperado']}"
+            )
+    QUARANTINE_MANIFEST_PATH.write_text("\n".join(lineas_manifiesto) + "\n", encoding="utf-8")
+
     return resumen
 
 

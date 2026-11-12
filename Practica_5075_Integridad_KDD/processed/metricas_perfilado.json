@@ -1,0 +1,55 @@
+{
+    "norma_referencia": "ISO/IEC 25012",
+    "fecha_generacion": "2026-11-12 20:03:18",
+    "fase_1_integridad_criptografica": {
+        "archivos_manifest": 3,
+        "archivos_validados": 2,
+        "archivos_rechazados": 1,
+        "tasa_integridad_criptografica_pct": 66.67
+    },
+    "fase_2_saneamiento_y_cuarentena": {
+        "registros_entrada_staging": 100,
+        "registros_segregados_bad_records": 13,
+        "registros_recuperados_por_imputacion": 2,
+        "imputaciones_detalle": {
+            "categoria": {
+                "registros_imputados": 1,
+                "valor_moda": "Electronica"
+            },
+            "metodo_pago": {
+                "registros_imputados": 1,
+                "valor_moda": "Transferencia"
+            }
+        },
+        "registros_conformes_salida": 87,
+        "tasa_validez_registros_pct": 87.0
+    },
+    "metricas_iso_25012": {
+        "tasa_completitud_pre_limpieza_pct": 95.0,
+        "tasa_completitud_post_limpieza_pct": 100.0,
+        "tasa_unicidad_id_transaccion_pct": 100.0,
+        "conformidad_esquema_y_dominio_pct": 100.0
+    },
+    "distribucion_importe_eur": {
+        "antes_de_limpieza": {
+            "n": 99,
+            "media": 151.28,
+            "mediana": 72.99,
+            "desviacion_estandar": 505.12,
+            "percentil_25_q1": 52.8,
+            "percentil_75_q3": 88.13,
+            "minimo": -34.5,
+            "maximo": 4120.0
+        },
+        "despues_de_limpieza": {
+            "n": 87,
+            "media": 70.99,
+            "mediana": 73.44,
+            "desviacion_estandar": 26.34,
+            "percentil_25_q1": 53.8,
+            "percentil_75_q3": 85.34,
+            "minimo": 12.5,
+            "maximo": 124.47
+        }
+    }
+}

@@ -18,7 +18,9 @@ import pandas as pd
 # Detección automática de la raíz del proyecto (soporta ejecución desde /scripts)
 SCRIPT_DIR: Path = Path(__file__).resolve().parent
 BASE_DIR: Path = SCRIPT_DIR.parent if SCRIPT_DIR.name.lower() == "scripts" else SCRIPT_DIR
-
+OUTPUT_SAMPLES_DIR: Path = BASE_DIR / "output_samples"
+PROFILING_JSON_PATH: Path = OUTPUT_SAMPLES_DIR / "metricas_perfilado.json"
+QUARANTINE_MANIFEST_PATH: Path = OUTPUT_SAMPLES_DIR / "quarantine_manifest.txt"
 STAGING_VERIFIED_DIR: Path = BASE_DIR / "staging" / "verified"
 FASE1_AUDIT_PATH: Path = BASE_DIR / "staging" / "fase1_auditoria.json"
 QUARANTINE_BAD_RECORDS: Path = BASE_DIR / "quarantine" / "bad_records.csv"
@@ -333,6 +335,30 @@ def ejecutar_pipeline_kdd() -> dict[str, Any]:
     )
     print(json.dumps(profiling_summary, indent=4, ensure_ascii=False))
     logging.info(f"Perfilado JSON guardado en {PROFILING_JSON_PATH}")
+    
+    # Exportar métricas de perfilado ISO/IEC 25012 en output_samples/metricas_perfilado.json
+    OUTPUT_SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+    PROFILING_JSON_PATH.write_text(
+        json.dumps(profiling_summary, indent=4, ensure_ascii=False), encoding="utf-8"
+    )
+    # Copia espejo en processed/ para mantener consistencia interna del pipeline
+    (PROCESSED_DIR / "metricas_perfilado.json").write_text(
+        json.dumps(profiling_summary, indent=4, ensure_ascii=False), encoding="utf-8"
+    )
+
+    # Anexar resumen de registros segregados en Fase 2 a output_samples/quarantine_manifest.txt
+    bloque_fase2 = [
+        "",
+        "[FASE 2 - REGISTROS SEGREGADOS A quarantine/bad_records.csv]",
+        f"# Registros analizados en staging: {total_inicial} | Segregados: {len(df_bad)} | Conformes: {total_final}",
+    ]
+    for _, bad_row in df_bad.iterrows():
+        bloque_fase2.append(
+            f"{bad_row['_archivo_origen']} | ID={bad_row['id_transaccion']} | {bad_row['motivo_cuarentena']}"
+        )
+    with QUARANTINE_MANIFEST_PATH.open("a", encoding="utf-8") as f_qm:
+        f_qm.write("\n".join(bloque_fase2) + "\n")
+    
     return profiling_summary
 
 

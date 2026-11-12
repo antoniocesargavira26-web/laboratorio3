@@ -10,3 +10,9 @@
 2026-11-12 19:52:08 [ERROR] FICHERO AUSENTE: 'transacciones_tienda_sur.csv' declarado en manifiesto no existe en C:\Users\EXPERTO\Documents\GitHub\laboratorio3\Practica_5075_Integridad_KDD\raw_batch_202611
 2026-11-12 19:52:08 [INFO] [OK] INTEGRIDAD VERIFICADA -> 'transacciones_tienda_este.csv' (SHA-256: 645e9de21d1fbe99...) promovido a C:\Users\EXPERTO\Documents\GitHub\laboratorio3\Practica_5075_Integridad_KDD\staging\verified
 2026-11-12 19:52:08 [INFO] === FIN FASE 1 | Validados: 2/3 (66.67%) | En cuarentena: 1 ===
+2026-11-12 20:03:14 [INFO] === INICIO FASE 1: VALIDACIÓN CRIPTOGRÁFICA SHA-256 ===
+2026-11-12 20:03:14 [INFO] Leyendo manifiesto oficial: C:\Users\EXPERTO\Documents\GitHub\laboratorio3\Practica_5075_Integridad_KDD\raw_batch_202611\manifest_checksums.sha256
+2026-11-12 20:03:14 [INFO] [OK] INTEGRIDAD VERIFICADA -> 'transacciones_tienda_norte.csv' (SHA-256: 34cc61612494703f...) promovido a C:\Users\EXPERTO\Documents\GitHub\laboratorio3\Practica_5075_Integridad_KDD\staging\verified
+2026-11-12 20:03:14 [ERROR] FICHERO AUSENTE: 'transacciones_tienda_sur.csv' declarado en manifiesto no existe en C:\Users\EXPERTO\Documents\GitHub\laboratorio3\Practica_5075_Integridad_KDD\raw_batch_202611
+2026-11-12 20:03:14 [INFO] [OK] INTEGRIDAD VERIFICADA -> 'transacciones_tienda_este.csv' (SHA-256: 645e9de21d1fbe99...) promovido a C:\Users\EXPERTO\Documents\GitHub\laboratorio3\Practica_5075_Integridad_KDD\staging\verified
+2026-11-12 20:03:14 [INFO] === FIN FASE 1 | Validados: 2/3 (66.67%) | En cuarentena: 1 ===
