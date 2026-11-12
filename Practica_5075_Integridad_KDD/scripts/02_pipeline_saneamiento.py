@@ -12,7 +12,8 @@ import numpy as np
 import pandas as pd
 
 # Rutas del pipeline
-BASE_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR = Path(__file__).resolve().parent
+BASE_DIR = SCRIPT_DIR.parent if SCRIPT_DIR.name.lower() == "scripts" else SCRIPT_DIR
 STAGING_VERIFIED_DIR = BASE_DIR / "staging" / "verified"
 FASE1_AUDIT_PATH = BASE_DIR / "staging" / "fase1_auditoria.json"
 QUARANTINE_BAD_RECORDS = BASE_DIR / "quarantine" / "bad_records.csv"

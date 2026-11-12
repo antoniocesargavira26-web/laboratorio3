@@ -12,7 +12,8 @@ from datetime import datetime
 from pathlib import Path
 
 # Configuración de rutas del entorno
-BASE_DIR = Path(__file__).resolve().parent
+SCRIPT_DIR = Path(__file__).resolve().parent
+BASE_DIR = SCRIPT_DIR.parent if SCRIPT_DIR.name.lower() == "scripts" else SCRIPT_DIR
 RAW_DIR = BASE_DIR / "raw_batch_202611"
 MANIFEST_PATH = RAW_DIR / "manifest_checksums.sha256"
 STAGING_VERIFIED_DIR = BASE_DIR / "staging" / "verified"
