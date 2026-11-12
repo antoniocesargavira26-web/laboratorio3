@@ -7,22 +7,30 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
-# Rutas del pipeline
-SCRIPT_DIR = Path(__file__).resolve().parent
-BASE_DIR = SCRIPT_DIR.parent if SCRIPT_DIR.name.lower() == "scripts" else SCRIPT_DIR
-STAGING_VERIFIED_DIR = BASE_DIR / "staging" / "verified"
-FASE1_AUDIT_PATH = BASE_DIR / "staging" / "fase1_auditoria.json"
-QUARANTINE_BAD_RECORDS = BASE_DIR / "quarantine" / "bad_records.csv"
-PROCESSED_DIR = BASE_DIR / "processed"
-OUTPUT_DATASET_PATH = PROCESSED_DIR / "dataset_kdd_listo.csv"
-PROFILING_JSON_PATH = PROCESSED_DIR / "data_profiling_summary.json"
-INFORME_MD_PATH = BASE_DIR / "INFORME_CALIDAD_KDD.md"
-LOG_DIR = BASE_DIR / "logs"
+# -----------------------------------------------------------------------------
+# 1. DEFINICIÓN DE RUTAS Y PARÁMETROS DE GOBIERNO DEL DATO
+# -----------------------------------------------------------------------------
+# Detección automática de la raíz del proyecto (soporta ejecución desde /scripts)
+SCRIPT_DIR: Path = Path(__file__).resolve().parent
+BASE_DIR: Path = SCRIPT_DIR.parent if SCRIPT_DIR.name.lower() == "scripts" else SCRIPT_DIR
 
+STAGING_VERIFIED_DIR: Path = BASE_DIR / "staging" / "verified"
+FASE1_AUDIT_PATH: Path = BASE_DIR / "staging" / "fase1_auditoria.json"
+QUARANTINE_BAD_RECORDS: Path = BASE_DIR / "quarantine" / "bad_records.csv"
+PROCESSED_DIR: Path = BASE_DIR / "processed"
+OUTPUT_DATASET_PATH: Path = PROCESSED_DIR / "dataset_kdd_listo.csv"
+PROFILING_JSON_PATH: Path = PROCESSED_DIR / "data_profiling_summary.json"
+INFORME_MD_PATH: Path = BASE_DIR / "INFORME_CALIDAD_KDD.md"
+LOG_DIR: Path = BASE_DIR / "logs"
+
+# -----------------------------------------------------------------------------
+# 2. CONFIGURACIÓN DEL SISTEMA DE LOGGING (AUDITORÍA DUAL: CONSOLA + FICHERO)
+# -----------------------------------------------------------------------------
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -34,20 +42,34 @@ logging.basicConfig(
     ],
 )
 
-ANIO_EN_CURSO = 2026
-FECHA_CORTE_MAXIMA = pd.Timestamp("2026-11-12 23:59:59")
-COLUMNAS_OBLIGATORIAS = ["id_transaccion", "timestamp", "importe_eur", "unidades"]
-COLUMNAS_SECUNDARIAS = ["tienda", "categoria", "metodo_pago"]
+# Reglas de negocio y esquema esperado
+ANIO_EN_CURSO: int = 2026
+FECHA_CORTE_MAXIMA: pd.Timestamp = pd.Timestamp("2026-11-12 23:59:59")
+COLUMNAS_OBLIGATORIAS: list[str] = ["id_transaccion", "timestamp", "importe_eur", "unidades"]
+COLUMNAS_SECUNDARIAS: list[str] = ["tienda", "categoria", "metodo_pago"]
 
 
 def cargar_ficheros_verificados() -> pd.DataFrame:
-    """Concatena los CSV presentes en staging/verified/ trazando el fichero origen."""
+    """Carga y concatena los ficheros CSV validados en `staging/verified/`.
+
+    Incorpora la columna de metadatos `_archivo_origen` en cada DataFrame parcial
+    para garantizar la trazabilidad completa hasta el fichero fuente en caso de
+    que un registro deba ser enviado a cuarentena.
+
+    Returns:
+        pd.DataFrame: DataFrame unificado con todos los registros verificados
+            en la Fase 1.
+
+    Raises:
+        FileNotFoundError: Si no existen ficheros `.csv` en `staging/verified/`.
+    """
     archivos = sorted(STAGING_VERIFIED_DIR.glob("*.csv"))
     if not archivos:
         raise FileNotFoundError(f"No hay archivos CSV verificados en {STAGING_VERIFIED_DIR}")
 
-    frames = []
+    frames: list[pd.DataFrame] = []
     for ruta in archivos:
+        # Forzar 'id_transaccion' como string nullable para preservar valores vacíos como <NA>
         df_parcial = pd.read_csv(ruta, dtype={"id_transaccion": "string"})
         df_parcial["_archivo_origen"] = ruta.name
         frames.append(df_parcial)
@@ -58,8 +80,21 @@ def cargar_ficheros_verificados() -> pd.DataFrame:
     return df_total
 
 
-def calcular_estadisticos_importe(serie: pd.Series) -> dict:
-    """Devuelve métricas descriptivas completas de importe_eur."""
+def calcular_estadisticos_importe(serie: pd.Series) -> dict[str, int | float]:
+    """Calcula métricas estadísticas descriptivas sobre la variable `importe_eur`.
+
+    Convierte de forma segura la serie a valores numéricos descartando nulos o
+    cadenas corruptas para obtener medidas de tendencia central, dispersión y
+    posición requeridas por el informe de perfilado KDD.
+
+    Args:
+        serie (pd.Series): Serie de pandas correspondiente a `importe_eur`.
+
+    Returns:
+        dict[str, int | float]: Diccionario con tamaño muestral (`n`), `media`,
+            `mediana`, `desviacion_estandar` (muestral, ddof=1), `percentil_25_q1`,
+            `percentil_75_q3`, `minimo` y `maximo` redondeados a 2 decimales.
+    """
     s = pd.to_numeric(serie, errors="coerce").dropna()
     return {
         "n": int(s.count()),
@@ -73,27 +108,49 @@ def calcular_estadisticos_importe(serie: pd.Series) -> dict:
     }
 
 
-def ejecutar_pipeline_kdd():
-    """Ejecuta el saneamiento, segregación a cuarentena y perfilado ISO/IEC 25012."""
+def ejecutar_pipeline_kdd() -> dict[str, Any]:
+    """Orquesta las Fases 2 y 3 del pipeline: saneamiento, cuarentena y perfilado KDD.
+
+    Aplica controles de calidad de datos sobre el lote verificado, segrega los
+    registros no conformes en `quarantine/bad_records.csv`, imputa atributos
+    secundarios faltantes, normaliza el esquema hacia `processed/dataset_kdd_listo.csv`
+    y genera el reporte de calidad ISO/IEC 25012 en formato JSON.
+
+    Returns:
+        dict[str, Any]: Resumen completo de perfilado de calidad de datos con las
+            métricas de integridad (Fase 1), saneamiento (Fase 2), indicadores
+            ISO/IEC 25012 y comparativa distributiva Pre/Post limpieza.
+    """
+    # Creación idempotente de directorios de salida
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     QUARANTINE_BAD_RECORDS.parent.mkdir(parents=True, exist_ok=True)
 
     logging.info("=== INICIO FASE 2: SANEAMIENTO, COHERENCIA Y DETECCIÓN DE OUTLIERS ===")
     df_raw = cargar_ficheros_verificados()
-    total_inicial = len(df_raw)
+    total_inicial: int = len(df_raw)
 
-    # Métricas previas al saneamiento (ISO/IEC 25012)
+    # -------------------------------------------------------------------------
+    # PASO 2.1: Perfilado de línea base (Pre-limpieza) según ISO/IEC 25012
+    # -------------------------------------------------------------------------
     registros_sin_nulos_pre = int(df_raw.drop(columns=["_archivo_origen"]).dropna().shape[0])
     completitud_pre_pct = round((registros_sin_nulos_pre / total_inicial) * 100, 2)
     stats_importe_pre = calcular_estadisticos_importe(df_raw["importe_eur"])
 
-    # Conversión tipada para evaluación de reglas
+    # Conversión tipada auxiliar sin destruir los valores crudos originales
+    # (necesarios para dejar constancia exacta en quarantine/bad_records.csv)
     df = df_raw.copy()
     df["importe_num"] = pd.to_numeric(df["importe_eur"], errors="coerce")
     df["unidades_num"] = pd.to_numeric(df["unidades"], errors="coerce")
-    df["ts_parsed"] = pd.to_datetime(df["timestamp"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
+    df["ts_parsed"] = pd.to_datetime(
+        df["timestamp"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
+    )
 
-    # Cálculo de umbrales IQR sobre importes positivos válidos para detectar anomalías de sensor/TPV
+    # -------------------------------------------------------------------------
+    # PASO 2.2: Cálculo de umbrales estadísticos de anomalías (Método Tukey IQR)
+    # -------------------------------------------------------------------------
+    # Se calculan los cuartiles exclusivamente sobre transacciones que ya cumplen
+    # las reglas básicas de dominio (importe > 0 y unidades >= 1) para evitar que
+    # importes negativos o nulos sesguen la detección de valores extremos.
     importes_validos_dom = df.loc[
         (df["importe_num"] > 0) & (df["unidades_num"] >= 1), "importe_num"
     ]
@@ -107,12 +164,14 @@ def ejecutar_pipeline_kdd():
         f"IQR={iqr:.2f}€ -> Rango aceptable: [{limite_inferior_iqr:.2f}€, {limite_superior_iqr:.2f}€]"
     )
 
-    # Evaluación fila a fila de criterios de rechazo hacia quarantine/bad_records.csv
-    motivos_rechazo = []
+    # -------------------------------------------------------------------------
+    # PASO 2.3: Auditoría registro a registro y clasificación de incidencias
+    # -------------------------------------------------------------------------
+    motivos_rechazo: list[str | None] = []
     for _, row in df.iterrows():
-        errores = []
+        errores: list[str] = []
 
-        # 1. Nulos en columnas obligatorias
+        # Regla 1: Integridad de clave primaria y columnas numéricas obligatorias
         if pd.isna(row["id_transaccion"]) or str(row["id_transaccion"]).strip() == "":
             errores.append("NULO_CLAVE_PRIMARIA: id_transaccion ausente")
         if pd.isna(row["importe_num"]):
@@ -120,7 +179,7 @@ def ejecutar_pipeline_kdd():
         if pd.isna(row["unidades_num"]):
             errores.append("NULO_OBLIGATORIO: unidades ausente o no numérico")
 
-        # 2. Coherencia temporal ISO 8601 y año en curso (2026)
+        # Regla 2: Validez sintáctica ISO 8601 y coherencia temporal con el año 2026
         if pd.isna(row["ts_parsed"]):
             errores.append(f"TIMESTAMP_CORRUPTO: '{row['timestamp']}' no cumple ISO 8601")
         else:
@@ -131,7 +190,7 @@ def ejecutar_pipeline_kdd():
             elif row["ts_parsed"] > FECHA_CORTE_MAXIMA:
                 errores.append(f"TIMESTAMP_FUTURO: '{row['timestamp']}'")
 
-        # 3. Reglas de dominio de negocio
+        # Regla 3: Restricciones de dominio transaccional (ventas estrictamente positivas)
         if pd.notna(row["importe_num"]) and row["importe_num"] <= 0:
             errores.append(f"DOMINIO_IMPORTE_NO_POSITIVO: {row['importe_num']} EUR")
         if pd.notna(row["unidades_num"]) and (
@@ -139,7 +198,7 @@ def ejecutar_pipeline_kdd():
         ):
             errores.append(f"DOMINIO_UNIDADES_INVALIDAS: {row['unidades_num']}")
 
-        # 4. Detección estadística de outliers (IQR)
+        # Regla 4: Detección de outliers severos por exceso (fallos de lectura TPV/sensor)
         if pd.notna(row["importe_num"]) and row["importe_num"] > limite_superior_iqr:
             errores.append(
                 f"OUTLIER_ESTADISTICO_IQR: {row['importe_num']} EUR > {limite_superior_iqr:.2f} EUR"
@@ -149,7 +208,9 @@ def ejecutar_pipeline_kdd():
 
     df["motivo_cuarentena"] = motivos_rechazo
 
-    # Segregar registros defectuosos a quarantine/bad_records.csv
+    # -------------------------------------------------------------------------
+    # PASO 2.4: Segregación de registros anómalos a quarantine/bad_records.csv
+    # -------------------------------------------------------------------------
     df_bad = df[df["motivo_cuarentena"].notna()].copy()
     cols_cuarentena = [
         "_archivo_origen",
@@ -172,10 +233,14 @@ def ejecutar_pipeline_kdd():
             f"{bad_row['motivo_cuarentena']}"
         )
 
-    # Filtrar registros estructuralmente válidos e imputar nulos en columnas secundarias
+    # -------------------------------------------------------------------------
+    # PASO 2.5: Imputación de atributos secundarios y transformación KDD
+    # -------------------------------------------------------------------------
     df_clean = df[df["motivo_cuarentena"].isna()].copy()
 
-    imputaciones_realizadas = {}
+    # Imputación por moda para variables categóricas no críticas, evitando perder
+    # transacciones cuya facturación y unidades están verificadas
+    imputaciones_realizadas: dict[str, dict[str, Any]] = {}
     for col in COLUMNAS_SECUNDARIAS:
         nulos_col = int(df_clean[col].isna().sum())
         if nulos_col > 0:
@@ -186,7 +251,7 @@ def ejecutar_pipeline_kdd():
                 f"Imputación secundaria en '{col}': {nulos_col} nulos reemplazados por la moda ('{moda}')."
             )
 
-    # Normalización de tipos y formato final ISO 8601 para minería de datos (KDD)
+    # Estandarización de tipos y creación de feature analítica derivada (Feature Engineering)
     df_clean["timestamp"] = df_clean["ts_parsed"].dt.strftime("%Y-%m-%d %H:%M:%S")
     df_clean["importe_eur"] = df_clean["importe_num"].round(2)
     df_clean["unidades"] = df_clean["unidades_num"].astype(int)
@@ -210,11 +275,14 @@ def ejecutar_pipeline_kdd():
         f"=== FIN FASE 2 | Dataset limpio exportado en {OUTPUT_DATASET_PATH} ({len(df_final)} registros) ==="
     )
 
-    # === FASE 3: PERFILADO KDD E INFORME ISO/IEC 25012 ===
+    # -------------------------------------------------------------------------
+    # FASE 3: GENERACIÓN DE REPORTE DE PERFILADO KDD (NORMA ISO/IEC 25012)
+    # -------------------------------------------------------------------------
     logging.info("=== INICIO FASE 3: PERFILADO DE CALIDAD ISO/IEC 25012 ===")
     if FASE1_AUDIT_PATH.exists():
         auditoria_f1 = json.loads(FASE1_AUDIT_PATH.read_text(encoding="utf-8"))
     else:
+        # Fallback por si la Fase 2 se ejecuta de forma aislada sin el JSON de Fase 1
         auditoria_f1 = {
             "ficheros_evaluados": 3,
             "ficheros_validados": 2,
@@ -222,14 +290,14 @@ def ejecutar_pipeline_kdd():
             "tasa_integridad_criptografica_pct": 66.67,
         }
 
-    total_final = len(df_final)
+    total_final: int = len(df_final)
     registros_sin_nulos_post = int(df_final.dropna().shape[0])
     completitud_post_pct = round((registros_sin_nulos_post / total_final) * 100, 2)
     unicidad_id_pct = round((df_final["id_transaccion"].nunique() / total_final) * 100, 2)
     tasa_validez_lote_pct = round((total_final / total_inicial) * 100, 2)
     stats_importe_post = calcular_estadisticos_importe(df_final["importe_eur"])
 
-    profiling_summary = {
+    profiling_summary: dict[str, Any] = {
         "norma_referencia": "ISO/IEC 25012",
         "fecha_generacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "fase_1_integridad_criptografica": {
@@ -265,6 +333,7 @@ def ejecutar_pipeline_kdd():
     )
     print(json.dumps(profiling_summary, indent=4, ensure_ascii=False))
     logging.info(f"Perfilado JSON guardado en {PROFILING_JSON_PATH}")
+    return profiling_summary
 
 
 if __name__ == "__main__":
