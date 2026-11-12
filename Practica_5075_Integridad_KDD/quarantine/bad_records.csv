@@ -1,0 +1,14 @@
+_archivo_origen,id_transaccion,tienda,timestamp,categoria,importe_eur,unidades,metodo_pago,motivo_cuarentena
+transacciones_tienda_este.csv,,Este_Valencia,2026-11-10 09:18:17,Electronica,102.4,1,Bizum,NULO_CLAVE_PRIMARIA: id_transaccion ausente
+transacciones_tienda_este.csv,TXE-20261110-0010,Este_Valencia,2027-08-21 14:22:10,Alimentacion,58.31,4,Transferencia,TIMESTAMP_FUERA_ANIO_2026: '2027-08-21 14:22:10'
+transacciones_tienda_este.csv,TXE-20261110-0012,Este_Valencia,2026-11-10 11:12:26,Hogar,-34.5,2,Tarjeta,DOMINIO_IMPORTE_NO_POSITIVO: -34.5 EUR
+transacciones_tienda_este.csv,TXE-20261110-0016,Este_Valencia,2026-11-10 12:02:54,Hogar,1480.0,1,Bizum,OUTLIER_ESTADISTICO_IQR: 1480.0 EUR > 139.62 EUR
+transacciones_tienda_este.csv,TXE-20261110-0018,Este_Valencia,2026-11-10 12:29:50,Alimentacion,0.0,2,Efectivo,DOMINIO_IMPORTE_NO_POSITIVO: 0.0 EUR
+transacciones_tienda_este.csv,TXE-20261110-0022,Este_Valencia,2024-02-11 09:10:05,Hogar,31.23,4,Transferencia,TIMESTAMP_FUERA_ANIO_2026: '2024-02-11 09:10:05'
+transacciones_tienda_este.csv,TXE-20261110-0025,Este_Valencia,2026-11-10 13:32:18,Textil,57.52,0,Efectivo,DOMINIO_UNIDADES_INVALIDAS: 0
+transacciones_tienda_este.csv,,Este_Valencia,2026-11-10 14:04:56,Electronica,48.25,5,Tarjeta,NULO_CLAVE_PRIMARIA: id_transaccion ausente
+transacciones_tienda_este.csv,TXE-20261110-0032,Este_Valencia,2026-11-10 14:48:52,Hogar,2750.9,4,Transferencia,OUTLIER_ESTADISTICO_IQR: 2750.9 EUR > 139.62 EUR
+transacciones_tienda_este.csv,TXE-20261110-0034,Este_Valencia,2026-11-10 15:15:21,Alimentacion,,3,Efectivo,NULO_OBLIGATORIO: importe_eur ausente o no numérico
+transacciones_tienda_este.csv,TXE-20261110-0039,Este_Valencia,2026-99-99 INVALID_TS,Textil,70.79,5,Transferencia,TIMESTAMP_CORRUPTO: '2026-99-99 INVALID_TS' no cumple ISO 8601
+transacciones_tienda_este.csv,TXE-20261110-0042,Este_Valencia,2026-11-10 16:42:04,Textil,115.74,-3,Efectivo,DOMINIO_UNIDADES_INVALIDAS: -3
+transacciones_tienda_este.csv,TXE-20261110-0047,Este_Valencia,2026-11-10 17:48:18,Hogar,4120.0,6,Efectivo,OUTLIER_ESTADISTICO_IQR: 4120.0 EUR > 139.62 EUR

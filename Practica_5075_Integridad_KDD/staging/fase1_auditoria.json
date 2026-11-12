@@ -1,0 +1,27 @@
+{
+    "timestamp_ejecucion": "2026-11-12 19:41:33",
+    "ficheros_evaluados": 3,
+    "ficheros_validados": 2,
+    "ficheros_rechazados": 1,
+    "tasa_integridad_criptografica_pct": 66.67,
+    "detalle": [
+        {
+            "archivo": "transacciones_tienda_norte.csv",
+            "estado": "VERIFICADO",
+            "hash_esperado": "34cc61612494703f00d1ac0c72c31366f5d4fb9b7e373344cc346d9ddd86a549",
+            "hash_calculado": "34cc61612494703f00d1ac0c72c31366f5d4fb9b7e373344cc346d9ddd86a549"
+        },
+        {
+            "archivo": "transacciones_tienda_sur.csv",
+            "estado": "AUSENTE",
+            "hash_esperado": "0773c2cde0d45d3bfea53ebe6a0ad9f8fd7f04dabd23f55e737f64918128b83c",
+            "hash_calculado": null
+        },
+        {
+            "archivo": "transacciones_tienda_este.csv",
+            "estado": "VERIFICADO",
+            "hash_esperado": "645e9de21d1fbe99813a076149f4d21e96f9e4e07390b33d45a94abfb3cd4dc9",
+            "hash_calculado": "645e9de21d1fbe99813a076149f4d21e96f9e4e07390b33d45a94abfb3cd4dc9"
+        }
+    ]
+}
